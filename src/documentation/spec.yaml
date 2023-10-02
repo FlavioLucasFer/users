@@ -1,0 +1,181 @@
+openapi: 3.1.1
+info:
+  title: Users API
+  version: 0.0.1
+  summary: An API that deals with user's related functionalities.
+  description: |
+    The Users API is a BaaS (Backend as a Service) API to manage users for third-party applications.
+    The API aims to provide basic functionalities such as CRUD operations.
+
+paths:
+  /users:
+    post:
+      tags:
+        - users
+        - create
+      operationId: create-user
+      summary: Create a User
+      description: |
+        This API creates a user with very basic information.
+      requestBody:
+        $ref: "#/components/requestBodies/CreateUser"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreateUserSuccess"
+        "400":
+          $ref: "#/components/responses/CreateUserBadRequest"
+        "500":
+          $ref: "#/components/responses/UnknownError"
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The user's identifier.
+        firstName:
+          type: string
+          description: The user's first name or given name.
+        lastName:
+          type: string
+          description: The user's last name or family name.
+        emailAddress:
+          type: string
+          format: email
+          descriprion: The user's email address.
+        phoneNumber:
+          type: string
+          format: E164
+          description: The user's phone number in E164 format.
+        birthDate:
+          type: string
+          format: date
+          description: The user's birth date.
+      required:
+        - id
+        - firstName
+        - lastName
+        - emailAddress
+      example:
+        id: 987dfca0-8489-4f60-a935-00b3b698d145
+        firstName: Albus
+        lastName: Dumbledore
+        emailAddress: albus.dumbledore@mail.com
+        phoneNumber: +7191453303573
+        birthDate: "1881-07-06"
+    ConstraintViolation:
+      type: object
+      properties:
+        field:
+          type: string
+          description: The field that has a constraint violation.
+        constraint:
+          type: string
+          description: A machine readable error code that identifies the violated constraint.
+        errorMessage:
+          type: string
+          description: A human readable error message that describes the violated constraint.
+      required:
+        - field
+        - constraint
+        - errorMessage
+      example:
+        field: firstName
+        constraint: INVALID
+        errorMessage: The firstName must be 1 to 255 length long.
+    ConstraintViolationsList:
+      type: object
+      properties:
+        constraintViolations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConstraintViolation"
+      required:
+        - constraintViolations
+    DefaultError:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          description: A machine readable error code.
+        errorMessage:
+          type: string
+          description: A human readable error code.
+      required:
+        - errorCode
+        - errorMessage
+
+  requestBodies:
+    CreateUser:
+      description: |
+        The request body required to create a user.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/schemas/User"
+
+  responses:
+    CreateUserSuccess:
+      description: |
+        The user was successfully created
+      content:
+        application/json:
+          schema:
+            $ref: "#/schemas/User"
+    CreateUserBadRequest:
+      description: |
+        The server was unable to complete the request because an invalid request body was submitted.
+        The API returns 400 with a list of constraint violations. The constraint violation object has the following format:
+
+        ```json
+        {
+          "field": firstName, # The field that has a constraint violation
+          "constraint": INVALID, # A machine readable error code that identifies the violated constraint
+          "errorMessage": "The firstName must be 1 to 255 length long." # A human readable error message that describes the violated constraint  
+        }
+        ```
+      content:
+        application/json:
+          schema:
+            $ref: "#/schemas/ConstraintViolationsList"
+          example:
+            constraintViolations:
+              - field: firstName
+                constraint: REQUIRED
+                errorMessage: The firstName is mandatory.
+              - field: lastName
+                constraint: REQUIRED
+                errorMessage: The lastName is mandatory.
+              - field: emailAddress
+                constraint: REQUIRED
+                errorMessage: The emailAddress is mandatory.
+            constraintViolations:
+              - field: firstName
+                constraint: INVALID
+                errorMessage: The firstName must be 1 to 255 length long.
+              - field: lastName
+                constraint: INVALID
+                errorMessage: The lastName must be 1 to 255 length long.
+              - field: emailAddress
+                constraint: INVALID
+                errorMessage: The emailAddress must be in a valid email format.
+              - field: phoneNumber
+                constraint: INVALID
+                errorMessage: The phoneNumber format must be E164.
+              - field: birthDate
+                constraint: INVALID
+                errorMessage: The birthDate format must be YYYY-MM-DD.
+    UnknownError:
+      description: |
+        The server was unable to complete the request due to an unknown issue.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultError"
+            examples:
+              errorCode: UNKNOWN_ERROR
+              errorMessage: The server was unable to complete the request due to an unknown issue.
